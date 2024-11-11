@@ -14,7 +14,7 @@ const snakeBodyImg = new Image();
 snakeBodyImg.src = "images/snake-body.png";
 
 const foodImg = new Image();
-foodImg.src = "images/food.jpg";
+foodImg.src = "images/food.png";
 
 const backgroundImg = new Image();
 backgroundImg.src = "images/background.jpg";
@@ -70,12 +70,36 @@ function drawBackground() {
   ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
 }
 
+// Function to rotate snake head based on direction
+function rotateSnakeHead(x, y, direction) {
+  ctx.save(); // Save current state of canvas
+
+  // Move the canvas to the snake's head position
+  ctx.translate(x + boxSize / 2, y + boxSize / 2);
+
+  // Rotate the canvas based on the direction
+  if (direction === "UP") {
+    ctx.rotate(-Math.PI / 2); // Rotate 90 degrees counterclockwise
+  } else if (direction === "DOWN") {
+    ctx.rotate(Math.PI / 2); // Rotate 90 degrees clockwise
+  } else if (direction === "LEFT") {
+    ctx.rotate(Math.PI); // Rotate 180 degrees
+  }
+
+  // Draw the snake head image at the rotated position
+  ctx.drawImage(snakeHeadImg, -boxSize / 2, -boxSize / 2, boxSize, boxSize);
+
+  ctx.restore(); // Restore the canvas state
+}
+
 // Function to draw the snake
 function drawSnake() {
   snake.forEach((segment, index) => {
     if (index === 0) {
-      ctx.drawImage(snakeHeadImg, segment.x, segment.y, boxSize, boxSize);
+      // Draw the snake head with rotation
+      rotateSnakeHead(segment.x, segment.y, direction);
     } else {
+      // Draw the snake body without rotation
       ctx.drawImage(snakeBodyImg, segment.x, segment.y, boxSize, boxSize);
     }
   });
@@ -152,7 +176,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 // Set the game loop
-setInterval(updateGame, 300);
+setInterval(updateGame, 150);
 
 // Register the service worker for offline support
 if ("serviceWorker" in navigator) {
