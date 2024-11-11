@@ -17,7 +17,7 @@ const foodImg = new Image();
 foodImg.src = "images/food.png";
 
 const backgroundImg = new Image();
-backgroundImg.src = "images/background.jpg";
+backgroundImg.src = "images/background.ipg";
 
 // Snake and food setup
 let snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
@@ -25,7 +25,7 @@ let food = {
   x: Math.floor(Math.random() * canvas.width / boxSize) * boxSize,
   y: Math.floor(Math.random() * canvas.height / boxSize) * boxSize
 };
-let direction = "";
+let direction = "RIGHT"; // Set initial direction to "RIGHT"
 let score = 0;
 
 // Particle array for visual effects
@@ -155,7 +155,7 @@ function updateGame() {
   if (detectCollision()) {
     alert(`Game Over! Your score: ${score}`);
     snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
-    direction = "RIGHT";
+    direction = "RIGHT"; // Reset direction to "RIGHT" after game over
     score = 0;
   } else {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
