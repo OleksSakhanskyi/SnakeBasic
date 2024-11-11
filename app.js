@@ -155,7 +155,7 @@ function updateGame() {
   if (detectCollision()) {
     alert(`Game Over! Your score: ${score}`);
     snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
-    direction = "";
+    direction = "RIGHT";
     score = 0;
   } else {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
