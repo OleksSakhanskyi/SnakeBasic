@@ -8,10 +8,10 @@ const boxSize = 20;
 
 // Load images
 const snakeHeadImg = new Image();
-snakeHeadImg.src = "images/snake-head.jpg";
+snakeHeadImg.src = "images/snake-head.png";
 
 const snakeBodyImg = new Image();
-snakeBodyImg.src = "images/snake-body.jpg";
+snakeBodyImg.src = "images/snake-body.png";
 
 const foodImg = new Image();
 foodImg.src = "images/food.jpg";
@@ -152,7 +152,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 // Set the game loop
-setInterval(updateGame, 100);
+setInterval(updateGame, 300);
 
 // Register the service worker for offline support
 if ("serviceWorker" in navigator) {
