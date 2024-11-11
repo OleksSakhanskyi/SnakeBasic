@@ -17,7 +17,7 @@ const foodImg = new Image();
 foodImg.src = "images/food.png";
 
 const backgroundImg = new Image();
-backgroundImg.src = "images/background.ipg";
+backgroundImg.src = "images/background.png";
 
 // Snake and food setup
 let snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
