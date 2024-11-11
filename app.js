@@ -8,16 +8,16 @@ const boxSize = 20;
 
 // Load images
 const snakeHeadImg = new Image();
-snakeHeadImg.src = "images/snake-head.png";
+snakeHeadImg.src = "images/snake-head.jpg";
 
 const snakeBodyImg = new Image();
-snakeBodyImg.src = "images/snake-body.png";
+snakeBodyImg.src = "images/snake-body.jpg";
 
 const foodImg = new Image();
-foodImg.src = "images/food.png";
+foodImg.src = "images/food.jpg";
 
 const backgroundImg = new Image();
-backgroundImg.src = "images/background.png";
+backgroundImg.src = "images/background.jpg";
 
 // Snake and food setup
 let snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
