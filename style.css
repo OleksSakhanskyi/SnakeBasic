@@ -11,5 +11,7 @@ body {
   canvas {
     background-color: #333;
     border: 2px solid #000;
+    touch-action: none; /* Disable gestures like scrolling or zooming */
   }
+
   
