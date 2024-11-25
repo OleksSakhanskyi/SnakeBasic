@@ -1,14 +1,14 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-let boxSize = 20; // Base unit size for the grid
+let boxSize = 20;
 
 // Resize canvas dynamically based on the device's screen size
 function resizeCanvas() {
   const minDimension = Math.min(window.innerWidth, window.innerHeight);
-  canvas.width = Math.floor((minDimension * 0.8) / boxSize) * boxSize; // 80% of the smaller dimension, snap to grid
+  canvas.width = Math.floor((minDimension * 0.8) / boxSize) * boxSize;
   canvas.height = canvas.width;
-  boxSize = canvas.width / 20; // Adjust boxSize based on canvas width
+  boxSize = canvas.width / 20;
 }
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
@@ -35,6 +35,8 @@ let food = {
 let direction = "RIGHT";
 let score = 0;
 const particles = [];
+let lastDirectionChange = 0;
+const inputDelay = 100; // Delay between input changes in milliseconds
 
 // Function to create particles
 function createParticles(x, y) {
@@ -58,7 +60,7 @@ function updateParticles() {
     particle.alpha -= 0.02;
 
     if (particle.alpha <= 0) {
-      particles.splice(index, 1); // Remove faded particles
+      particles.splice(index, 1);
     }
   });
 }
@@ -146,46 +148,53 @@ function detectCollision() {
   return false;
 }
 
-// Keyboard controls for PC
+// Keyboard controls for PC with direction prevention
 document.addEventListener("keydown", (event) => {
-  if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
-  if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
-  if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
-  if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+  const now = Date.now();
+  if (now - lastDirectionChange > inputDelay) {
+    if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+    if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+    if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+    if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+    lastDirectionChange = now;
+  }
 });
 
-// Mobile touch controls
+// Mobile touch controls with direction prevention
 let touchStartX = 0;
 let touchStartY = 0;
 
-// Prevent page scrolling during swipe
 canvas.addEventListener("touchstart", (e) => {
-  e.preventDefault(); // Prevent page scroll on touch
+  e.preventDefault();
   const touch = e.touches[0];
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
 });
 
 canvas.addEventListener("touchend", (e) => {
-  e.preventDefault(); // Prevent page scroll on touch
+  e.preventDefault();
   const touchEndX = e.changedTouches[0].clientX;
   const touchEndY = e.changedTouches[0].clientY;
 
   const dx = touchEndX - touchStartX;
   const dy = touchEndY - touchStartY;
 
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 0 && direction !== "LEFT") direction = "RIGHT";
-    else if (dx < 0 && direction !== "RIGHT") direction = "LEFT";
-  } else {
-    if (dy > 0 && direction !== "UP") direction = "DOWN";
-    else if (dy < 0 && direction !== "DOWN") direction = "UP";
+  const now = Date.now();
+  if (now - lastDirectionChange > inputDelay) {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0 && direction !== "LEFT") direction = "RIGHT";
+      else if (dx < 0 && direction !== "RIGHT") direction = "LEFT";
+    } else {
+      if (dy > 0 && direction !== "UP") direction = "DOWN";
+      else if (dy < 0 && direction !== "DOWN") direction = "UP";
+    }
+    lastDirectionChange = now;
   }
 });
 
 // Main game loop using requestAnimationFrame
 let lastTime = 0;
-const gameSpeed = 150; // Game speed in milliseconds
+const gameSpeed = 150;
 
 function gameLoop(timestamp) {
   if (timestamp - lastTime > gameSpeed) {
