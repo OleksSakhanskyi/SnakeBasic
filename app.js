@@ -1,17 +1,10 @@
+// Get canvas and context
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-let boxSize = 20;
-
-// Resize canvas dynamically based on the device's screen size
-function resizeCanvas() {
-  const minDimension = Math.min(window.innerWidth, window.innerHeight);
-  canvas.width = Math.floor((minDimension * 0.8) / boxSize) * boxSize;
-  canvas.height = canvas.width;
-  boxSize = canvas.width / 20;
-}
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
+canvas.width = 400;
+canvas.height = 400;
+const boxSize = 20;
 
 // Load images
 const snakeHeadImg = new Image();
@@ -26,19 +19,16 @@ foodImg.src = "images/food.png";
 const backgroundImg = new Image();
 backgroundImg.src = "images/background.jpg";
 
-// Game variables
+// Snake and food setup
 let snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
-let food = {
-  x: Math.floor(Math.random() * canvas.width / boxSize) * boxSize,
-  y: Math.floor(Math.random() * canvas.height / boxSize) * boxSize
-};
+let apples = [];
 let direction = "RIGHT";
 let score = 0;
-const particles = [];
-let lastDirectionChange = 0;
-const inputDelay = 100; // Delay between input changes in milliseconds
 
-// Function to create particles
+// Particle array for visual effects
+const particles = [];
+
+// Function to create particles at a specific location
 function createParticles(x, y) {
   for (let i = 0; i < 5; i++) {
     particles.push({
@@ -52,63 +42,101 @@ function createParticles(x, y) {
   }
 }
 
-// Function to update and draw particles
-function updateParticles() {
-  particles.forEach((particle, index) => {
-    particle.x += particle.dx;
-    particle.y += particle.dy;
-    particle.alpha -= 0.02;
-
-    if (particle.alpha <= 0) {
-      particles.splice(index, 1);
-    }
-  });
-}
-
+// Function to draw particles and animate them
 function drawParticles() {
-  particles.forEach((particle) => {
+  particles.forEach((particle, index) => {
     ctx.globalAlpha = particle.alpha;
     ctx.fillStyle = "yellow";
     ctx.beginPath();
     ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
     ctx.fill();
+    particle.x += particle.dx;
+    particle.y += particle.dy;
+    particle.alpha -= 0.02;
+    
+    // Remove particles that have faded out
+    if (particle.alpha <= 0) {
+      particles.splice(index, 1);
+    }
   });
   ctx.globalAlpha = 1;
 }
 
-// Draw the background
+// Function to draw the background
 function drawBackground() {
   ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
 }
 
-// Rotate and draw the snake head
+// Function to rotate snake head based on direction
 function rotateSnakeHead(x, y, direction) {
-  ctx.save();
+  ctx.save(); // Save current state of canvas
+
+  // Move the canvas to the snake's head position
   ctx.translate(x + boxSize / 2, y + boxSize / 2);
-  if (direction === "UP") ctx.rotate(-Math.PI / 2);
-  else if (direction === "DOWN") ctx.rotate(Math.PI / 2);
-  else if (direction === "LEFT") ctx.rotate(Math.PI);
+
+  // Rotate the canvas based on the direction
+  if (direction === "UP" ) {
+    ctx.rotate(-Math.PI / 2); // Rotate 90 degrees counterclockwise
+  } else if (direction === "DOWN") {
+    ctx.rotate(Math.PI / 2); // Rotate 90 degrees clockwise
+  } else if (direction === "LEFT") {
+    ctx.rotate(Math.PI); // Rotate 180 degrees
+  }
+
+  // Draw the snake head image at the rotated position
   ctx.drawImage(snakeHeadImg, -boxSize / 2, -boxSize / 2, boxSize, boxSize);
-  ctx.restore();
+
+  ctx.restore(); // Restore the canvas state
 }
 
-// Draw the snake
+// Function to draw the snake
 function drawSnake() {
   snake.forEach((segment, index) => {
     if (index === 0) {
+      // Draw the snake head with rotation
       rotateSnakeHead(segment.x, segment.y, direction);
     } else {
+      // Draw the snake body without rotation
       ctx.drawImage(snakeBodyImg, segment.x, segment.y, boxSize, boxSize);
     }
   });
 }
 
-// Draw the food
-function drawFood() {
-  ctx.drawImage(foodImg, food.x, food.y, boxSize, boxSize);
+// Function to spawn a single apple at a valid position
+function spawnApple() {
+  let newApple;
+  let isValidPosition = false;
+
+  // Keep generating positions until a valid one is found
+  while (!isValidPosition) {
+    newApple = {
+      x: Math.floor(Math.random() * (canvas.width / boxSize)) * boxSize,
+      y: Math.floor(Math.random() * (canvas.height / boxSize)) * boxSize
+    };
+
+    // Check if the new apple's position overlaps with the snake
+    isValidPosition = !snake.some(segment => segment.x === newApple.x && segment.y === newApple.y);
+  }
+
+  return newApple;
 }
 
-// Move the snake
+// Function to spawn multiple apples
+function spawnApples(count) {
+  apples = []; // Reset apples array
+  for (let i = 0; i < count; i++) {
+    apples.push(spawnApple());
+  }
+}
+
+// Function to draw apples
+function drawApples() {
+  apples.forEach(apple => {
+    ctx.drawImage(foodImg, apple.x, apple.y, boxSize, boxSize);
+  });
+}
+
+// Function to move the snake
 function moveSnake() {
   const head = { ...snake[0] };
 
@@ -119,19 +147,24 @@ function moveSnake() {
 
   snake.unshift(head);
 
-  if (head.x === food.x && head.y === food.y) {
+  // Check if the snake eats any apple
+  const eatenAppleIndex = apples.findIndex(apple => apple.x === head.x && apple.y === head.y);
+
+  if (eatenAppleIndex !== -1) {
     score++;
-    createParticles(food.x + boxSize / 2, food.y + boxSize / 2);
-    food = {
-      x: Math.floor(Math.random() * canvas.width / boxSize) * boxSize,
-      y: Math.floor(Math.random() * canvas.height / boxSize) * boxSize
-    };
+    createParticles(apples[eatenAppleIndex].x + boxSize / 2, apples[eatenAppleIndex].y + boxSize / 2); // Add particles
+    apples.splice(eatenAppleIndex, 1); // Remove eaten apple
+
+    // If no apples remain, spawn four new apples
+    if (apples.length === 0) {
+      spawnApples(4);
+    }
   } else {
     snake.pop();
   }
 }
 
-// Detect collisions
+// Function to detect collisions
 function detectCollision() {
   const head = snake[0];
 
@@ -148,75 +181,52 @@ function detectCollision() {
   return false;
 }
 
-// Keyboard controls for PC with direction prevention
-document.addEventListener("keydown", (event) => {
-  const now = Date.now();
-  if (now - lastDirectionChange > inputDelay) {
-    if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
-    if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
-    if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
-    if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
-    lastDirectionChange = now;
+// Main game update function
+function updateGame() {
+  if (detectCollision()) {
+    alert(`Game Over! Your score: ${score}`);
+    snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
+    direction = "RIGHT";
+    score = 0;
+    spawnApples(4); // Spawn new apples on restart
+  } else {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+    drawSnake();
+    drawApples(); // Draw multiple apples
+    drawParticles();
+    moveSnake();
   }
-});
-
-// Mobile touch controls with direction prevention
-let touchStartX = 0;
-let touchStartY = 0;
-
-canvas.addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  touchStartX = touch.clientX;
-  touchStartY = touch.clientY;
-});
-
-canvas.addEventListener("touchend", (e) => {
-  e.preventDefault();
-  const touchEndX = e.changedTouches[0].clientX;
-  const touchEndY = e.changedTouches[0].clientY;
-
-  const dx = touchEndX - touchStartX;
-  const dy = touchEndY - touchStartY;
-
-  const now = Date.now();
-  if (now - lastDirectionChange > inputDelay) {
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0 && direction !== "LEFT") direction = "RIGHT";
-      else if (dx < 0 && direction !== "RIGHT") direction = "LEFT";
-    } else {
-      if (dy > 0 && direction !== "UP") direction = "DOWN";
-      else if (dy < 0 && direction !== "DOWN") direction = "UP";
-    }
-    lastDirectionChange = now;
-  }
-});
-
-// Main game loop using requestAnimationFrame
-let lastTime = 0;
-const gameSpeed = 150;
-
-function gameLoop(timestamp) {
-  if (timestamp - lastTime > gameSpeed) {
-    lastTime = timestamp;
-
-    if (detectCollision()) {
-      alert(`Game Over! Your score: ${score}`);
-      snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
-      direction = "RIGHT";
-      score = 0;
-    } else {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawBackground();
-      drawSnake();
-      drawFood();
-      drawParticles();
-      moveSnake();
-      updateParticles();
-    }
-  }
-  requestAnimationFrame(gameLoop);
 }
 
-// Start the game
-requestAnimationFrame(gameLoop);
+// Keydown event listener for controlling the snake
+document.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+  if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+  if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+  if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+});
+
+// Touch control for mobile
+let touchStartX = 0, touchStartY = 0;
+document.addEventListener("touchstart", (event) => {
+  touchStartX = event.touches[0].clientX;
+  touchStartY = event.touches[0].clientY;
+});
+
+document.addEventListener("touchmove", (event) => {
+  const deltaX = event.touches[0].clientX - touchStartX;
+  const deltaY = event.touches[0].clientY - touchStartY;
+
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    if (deltaX > 0 && direction !== "LEFT") direction = "RIGHT";
+    if (deltaX < 0 && direction !== "RIGHT") direction = "LEFT";
+  } else {
+    if (deltaY > 0 && direction !== "UP") direction = "DOWN";
+    if (deltaY < 0 && direction !== "DOWN") direction = "UP";
+  }
+});
+
+// Spawn initial apples and set the game loop
+spawnApples(4);
+setInterval(updateGame, 150);
