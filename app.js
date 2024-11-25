@@ -204,9 +204,11 @@ document.addEventListener("keydown", (event) => {
 
 // Touch control for mobile
 let touchStartX = 0, touchStartY = 0;
+
 document.addEventListener("touchstart", (event) => {
   touchStartX = event.touches[0].clientX;
   touchStartY = event.touches[0].clientY;
+  event.preventDefault(); // Prevent default touch behavior
 });
 
 document.addEventListener("touchmove", (event) => {
@@ -220,7 +222,10 @@ document.addEventListener("touchmove", (event) => {
     if (deltaY > 0 && direction !== "UP") pendingDirection = "DOWN";
     if (deltaY < 0 && direction !== "DOWN") pendingDirection = "UP";
   }
+
+  event.preventDefault(); // Prevent default touch behavior
 });
+
 
 // Spawn initial apples and set the game loop
 spawnApples(4);
