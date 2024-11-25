@@ -1,10 +1,17 @@
-// Get canvas and context
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 400;
-canvas.height = 400;
-const boxSize = 20;
+let boxSize = 20; // Base unit size for the grid
+
+// Resize canvas dynamically based on the device's screen size
+function resizeCanvas() {
+  const minDimension = Math.min(window.innerWidth, window.innerHeight);
+  canvas.width = Math.floor((minDimension * 0.8) / boxSize) * boxSize; // 80% of the smaller dimension, snap to grid
+  canvas.height = canvas.width;
+  boxSize = canvas.width / 20; // Adjust boxSize based on canvas width
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
 
 // Load images
 const snakeHeadImg = new Image();
@@ -19,19 +26,17 @@ foodImg.src = "images/food.png";
 const backgroundImg = new Image();
 backgroundImg.src = "images/background.jpg";
 
-// Snake and food setup
+// Game variables
 let snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
 let food = {
   x: Math.floor(Math.random() * canvas.width / boxSize) * boxSize,
   y: Math.floor(Math.random() * canvas.height / boxSize) * boxSize
 };
-let direction = "RIGHT"; // Set initial direction to "RIGHT"
+let direction = "RIGHT";
 let score = 0;
-
-// Particle array for visual effects
 const particles = [];
 
-// Function to create particles at a specific location
+// Function to create particles
 function createParticles(x, y) {
   for (let i = 0; i < 5; i++) {
     particles.push({
@@ -45,72 +50,63 @@ function createParticles(x, y) {
   }
 }
 
-// Function to draw particles and animate them
-function drawParticles() {
+// Function to update and draw particles
+function updateParticles() {
   particles.forEach((particle, index) => {
+    particle.x += particle.dx;
+    particle.y += particle.dy;
+    particle.alpha -= 0.02;
+
+    if (particle.alpha <= 0) {
+      particles.splice(index, 1); // Remove faded particles
+    }
+  });
+}
+
+function drawParticles() {
+  particles.forEach((particle) => {
     ctx.globalAlpha = particle.alpha;
     ctx.fillStyle = "yellow";
     ctx.beginPath();
     ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
     ctx.fill();
-    particle.x += particle.dx;
-    particle.y += particle.dy;
-    particle.alpha -= 0.02;
-    
-    // Remove particles that have faded out
-    if (particle.alpha <= 0) {
-      particles.splice(index, 1);
-    }
   });
   ctx.globalAlpha = 1;
 }
 
-// Function to draw the background
+// Draw the background
 function drawBackground() {
   ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
 }
 
-// Function to rotate snake head based on direction
+// Rotate and draw the snake head
 function rotateSnakeHead(x, y, direction) {
-  ctx.save(); // Save current state of canvas
-
-  // Move the canvas to the snake's head position
+  ctx.save();
   ctx.translate(x + boxSize / 2, y + boxSize / 2);
-
-  // Rotate the canvas based on the direction
-  if (direction === "UP") {
-    ctx.rotate(-Math.PI / 2); // Rotate 90 degrees counterclockwise
-  } else if (direction === "DOWN") {
-    ctx.rotate(Math.PI / 2); // Rotate 90 degrees clockwise
-  } else if (direction === "LEFT") {
-    ctx.rotate(Math.PI); // Rotate 180 degrees
-  }
-
-  // Draw the snake head image at the rotated position
+  if (direction === "UP") ctx.rotate(-Math.PI / 2);
+  else if (direction === "DOWN") ctx.rotate(Math.PI / 2);
+  else if (direction === "LEFT") ctx.rotate(Math.PI);
   ctx.drawImage(snakeHeadImg, -boxSize / 2, -boxSize / 2, boxSize, boxSize);
-
-  ctx.restore(); // Restore the canvas state
+  ctx.restore();
 }
 
-// Function to draw the snake
+// Draw the snake
 function drawSnake() {
   snake.forEach((segment, index) => {
     if (index === 0) {
-      // Draw the snake head with rotation
       rotateSnakeHead(segment.x, segment.y, direction);
     } else {
-      // Draw the snake body without rotation
       ctx.drawImage(snakeBodyImg, segment.x, segment.y, boxSize, boxSize);
     }
   });
 }
 
-// Function to draw the food
+// Draw the food
 function drawFood() {
   ctx.drawImage(foodImg, food.x, food.y, boxSize, boxSize);
 }
 
-// Function to move the snake
+// Move the snake
 function moveSnake() {
   const head = { ...snake[0] };
 
@@ -123,7 +119,7 @@ function moveSnake() {
 
   if (head.x === food.x && head.y === food.y) {
     score++;
-    createParticles(food.x + boxSize / 2, food.y + boxSize / 2); // Add particles at food location
+    createParticles(food.x + boxSize / 2, food.y + boxSize / 2);
     food = {
       x: Math.floor(Math.random() * canvas.width / boxSize) * boxSize,
       y: Math.floor(Math.random() * canvas.height / boxSize) * boxSize
@@ -133,7 +129,7 @@ function moveSnake() {
   }
 }
 
-// Function to detect collisions
+// Detect collisions
 function detectCollision() {
   const head = snake[0];
 
@@ -150,24 +146,7 @@ function detectCollision() {
   return false;
 }
 
-// Main game update function
-function updateGame() {
-  if (detectCollision()) {
-    alert(`Game Over! Your score: ${score}`);
-    snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
-    direction = "RIGHT"; // Reset direction to "RIGHT" after game over
-    score = 0;
-  } else {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBackground();    // Draw background
-    drawSnake();         // Draw snake
-    drawFood();          // Draw food
-    drawParticles();     // Draw particle effects
-    moveSnake();         // Move snake
-  }
-}
-
-// Keydown event listener for controlling the snake
+// Keyboard controls for PC
 document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
   if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
@@ -175,13 +154,57 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
 });
 
-// Set the game loop
-setInterval(updateGame, 150);
+// Touch controls for mobile
+let touchStartX = 0;
+let touchStartY = 0;
 
-// Register the service worker for offline support
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .register("service-worker.js")
-    .then(() => console.log("Service Worker registered successfully."))
-    .catch((error) => console.error("Service Worker registration failed:", error));
+canvas.addEventListener("touchstart", (e) => {
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+});
+
+canvas.addEventListener("touchend", (e) => {
+  const touchEndX = e.changedTouches[0].clientX;
+  const touchEndY = e.changedTouches[0].clientY;
+
+  const dx = touchEndX - touchStartX;
+  const dy = touchEndY - touchStartY;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 0 && direction !== "LEFT") direction = "RIGHT";
+    else if (dx < 0 && direction !== "RIGHT") direction = "LEFT";
+  } else {
+    if (dy > 0 && direction !== "UP") direction = "DOWN";
+    else if (dy < 0 && direction !== "DOWN") direction = "UP";
+  }
+});
+
+// Main game loop using requestAnimationFrame
+let lastTime = 0;
+const gameSpeed = 150; // Game speed in milliseconds
+
+function gameLoop(timestamp) {
+  if (timestamp - lastTime > gameSpeed) {
+    lastTime = timestamp;
+
+    if (detectCollision()) {
+      alert(`Game Over! Your score: ${score}`);
+      snake = [{ x: 9 * boxSize, y: 10 * boxSize }];
+      direction = "RIGHT";
+      score = 0;
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+      drawSnake();
+      drawFood();
+      drawParticles();
+      moveSnake();
+      updateParticles();
+    }
+  }
+  requestAnimationFrame(gameLoop);
 }
+
+// Start the game
+requestAnimationFrame(gameLoop);
