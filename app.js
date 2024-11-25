@@ -154,17 +154,20 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
 });
 
-// Touch controls for mobile
+// Mobile touch controls
 let touchStartX = 0;
 let touchStartY = 0;
 
+// Prevent page scrolling during swipe
 canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault(); // Prevent page scroll on touch
   const touch = e.touches[0];
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
 });
 
 canvas.addEventListener("touchend", (e) => {
+  e.preventDefault(); // Prevent page scroll on touch
   const touchEndX = e.changedTouches[0].clientX;
   const touchEndY = e.changedTouches[0].clientY;
 
